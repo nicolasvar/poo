@@ -35,7 +35,7 @@ class UserController(Routable):
     def add(self, id:int, name:str, email:str) -> Response:
         user = UserEntity(id=id, name=name,email=email)
         self.items.append(user)
-        self.items = next((item for item in items if item.id == id), None)
+        self.item = next((item for item in items if item.id == id), None)
         return Response(message="User added", success=True)
     
   #  @put("/update/{id}")
