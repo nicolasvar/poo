@@ -1,0 +1,20 @@
+[tool.poetry]
+name="poo"
+version="1.0.0"
+readme="README.md"
+authors=["Joguer Tacas Misaico <tacasmisaico@gmail.com>"]
+description="A simple Python package"
+package-mode=true
+packages=[]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = {extras = ["all"], version = "^0.115.6"}
+fastapi-utils = "^0.8.0"
+classy-fastapi = "^0.6.1"
+uvicorn = "^0.32.1"
+watchfiles = "^1.0.0"
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+[tool.hatch.build.targets.wheel]
