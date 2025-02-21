@@ -1,0 +1,10 @@
+services:
+  app:
+    container_name: bakend_ide_python
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILDKIT_INLINE_CACHE: 0
+    ports:
+      - 9001:8000

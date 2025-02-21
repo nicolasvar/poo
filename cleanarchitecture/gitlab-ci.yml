@@ -1,0 +1,82 @@
+stages:
+  - build
+  - test
+  - publish
+  #- deploy
+variables:
+  IMAGE_NAME: $CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:latest
+
+build-job: # This job runs in the build stage, which runs first.
+  image: python:3.12-bullseye
+  stage: build
+  only:
+    - ia
+  before_script:
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+  script:
+    - echo "Instalando las dependencias"
+    - git checkout -b main origin/main
+    - git fetch origin
+    - git reset --hard origin/main
+    - git add . -f
+    - git checkout deploy 2>/dev/null || git checkout -b deploy
+    - git checkout main -- .
+    - git status
+    - ls
+    - git add . -f
+
+    - git commit -am "Deploy"
+    - git push "https://gitlab-ci-token:glpat@$CI_SERVER_HOST/$CI_PROJECT_PATH.git" HEAD:deploy
+    - echo "Compile complete."
+
+unit-test-job: # This job runs in the test stage.
+  stage: test # It only starts when the job in the build stage completes successfully.
+  only:
+    - main
+  script:
+    - echo "Running unit tests... This will take about 60 seconds."
+    - sleep 60
+    - echo "Code coverage is 90%"
+
+lint-test-job: # This job also runs in the test stage.
+  stage: test # It can run at the same time as unit-test-job (in parallel).
+  only:
+    - main
+  script:
+    - echo "Linting code... This will take about 10 seconds."
+    - sleep 10
+    - echo "No lint issues found."
+
+publish-job:
+  image: docker
+  stage: publish
+  services:
+    - docker:dind
+  before_script:
+    - git --version
+    - git fetch origin
+    - git switch deploy
+    - echo $CI_REGISTRY/$IMAGE_NAME
+    - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+    #- echo $PAT | docker login $CI_REGISTRY -u $GITLAB_USER_LOGIN --password-stdin
+  script:
+    - docker build . --tag $CI_REGISTRY/$IMAGE_NAME
+    - docker push $CI_REGISTRY/$IMAGE_NAME
+#deploy-job: # This job runs in the deploy stage.
+#  image: ubuntu:latest
+#  services:
+#    - docker:dind
+#  stage: deploy
+#  only:
+#    - main
+#  before_script:
+#    - apt-get -yq update
+#    - apt-get -yqq install ssh
+#    - install -m 600 -D /dev/null ~/.ssh/id_rsa
+#    - echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
+#    - ssh-keyscan -H $SSH_HOST > ~/.ssh/known_hosts
+#  script:
+#    - ssh $SSH_USER@$SSH_HOST "cd $WORK_DIR && docker-compose pull && docker-compose up -d && exit"
+#  after_script:
+#    - rm -rf ~/.ssh
